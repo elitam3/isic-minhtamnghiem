@@ -2,7 +2,8 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Meta tag pro responzivitu a zamezení zoomu, aby to působilo jako nativní aplikace na iPhonu -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Moje ISIC Karta</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -12,7 +13,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        /* Animace a speciální efekty */
+        /* Overlay přes kartu */
         .logo-wave {
             position: absolute;
             inset: 0;
@@ -21,34 +22,59 @@
             z-index: 30;
         }
 
+        /* Samotný kontejner loga (zvětšeno na 110px) */
         .floating-logo {
             position: absolute;
-            width: 80px;
-            height: 80px;
+            width: 110px;
+            height: 110px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
+        /* Logo obrázek */
         .floating-logo img {
             width: 100%;
             height: auto;
+            object-fit: contain;
             opacity: 0;
             animation: holographicFlash 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         }
 
+        /* Holografická animace s unikátními barvami a 60% opacity */
         @keyframes holographicFlash {
-            0% { opacity: 0; filter: drop-shadow(0 0 0 transparent); }
-            10% { opacity: 0.8; filter: drop-shadow(-2px -2px 4px var(--c1)) drop-shadow(2px 2px 4px var(--c2)); }
-            40% { opacity: 0; }
-            100% { opacity: 0; }
+            0% {
+                opacity: 0;
+                filter: drop-shadow(0 0 0 transparent);
+            }
+            10% {
+                opacity: 1;
+                filter: drop-shadow(-2px -2px 4px var(--c1)) 
+                        drop-shadow(2px 2px 4px var(--c2))    
+                        drop-shadow(0 0 8px var(--c3));    
+            }
+            40% {
+                opacity: 0;
+                filter: drop-shadow(0 0 0 transparent);
+            }
+            100% {
+                opacity: 0;
+            }
         }
 
+        /* Diagonální holografický sweep */
         .logo-wave::after {
             content: '';
             position: absolute;
             inset: -40%;
-            background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.2) 50%, transparent 65%);
+            background: linear-gradient(
+                115deg,
+                transparent 35%,
+                rgba(255,255,255,0.12) 48%,
+                rgba(255,255,255,0.35) 50%,
+                rgba(255,255,255,0.12) 52%,
+                transparent 65%
+            );
             animation: sweep 4s linear infinite;
         }
 
@@ -58,7 +84,7 @@
         }
     </style>
 </head>
-<body>
+<body class="bg-neutral-950">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -67,10 +93,18 @@
         function App() {
             const [time, setTime] = useState(new Date());
 
+            // Hodiny
             useEffect(() => {
                 const timer = setInterval(() => setTime(new Date()), 1000);
                 return () => clearInterval(timer);
             }, []);
+
+            // Vykreslení ikon při každém updatu (důležité pro Lucide v Reactu bez bundleru)
+            useEffect(() => {
+                if (window.lucide) {
+                    window.lucide.createIcons();
+                }
+            });
 
             const formatTime = () => {
                 const d = time;
@@ -80,26 +114,27 @@
             };
 
             const logos = [
-                { x: 50, y: 450, delay: 0.3, rotation: 75, colors: ['#ff69b4', '#00c8ff', '#b464ff'] },
-                { x: 160, y: 340, delay: 0.6, rotation: -30, colors: ['#6496ff', '#c864ff', '#9664ff'] },
-                { x: 280, y: 250, delay: 0.9, rotation: 10, colors: ['#00ffcc', '#0066ff', '#cc00ff'] },
-                { x: 20, y: 260, delay: 1.2, rotation: -60, colors: ['#ff3366', '#ff9933', '#ff00cc'] },
-                { x: 140, y: 150, delay: 1.5, rotation: 30, colors: ['#ff69b4', '#9664ff', '#00c8ff'] },
-                { x: 30, y: 70, delay: 1.8, rotation: 45, colors: ['#00ffcc', '#cc00ff', '#6496ff'] },
-                { x: 260, y: 40, delay: 2.1, rotation: -15, colors: ['#c864ff', '#ff3366', '#ff9933'] },
+                { x: 50, y: 450, delay: 0.3, rotation: 75, colors: ['#ff69b499', '#00c8ff99', '#b464ff99'] },
+                { x: 160, y: 340, delay: 0.6, rotation: -30, colors: ['#6496ff99', '#c864ff99', '#9664ff99'] },
+                { x: 280, y: 250, delay: 0.9, rotation: 10, colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
+                { x: 20, y: 260, delay: 1.2, rotation: -60, colors: ['#ff336699', '#ff993399', '#ff00cc99'] },
+                { x: 140, y: 150, delay: 1.5, rotation: 30, colors: ['#ff69b499', '#9664ff99', '#00c8ff99'] },
+                { x: 30, y: 70, delay: 1.8, rotation: 45, colors: ['#00ffcc99', '#cc00ff99', '#6496ff99'] },
+                { x: 260, y: 40, delay: 2.1, rotation: -15, colors: ['#c864ff99', '#ff336699', '#ff993399'] },
             ];
 
             return (
-                <div className="min-h-screen bg-neutral-950 flex justify-center font-sans select-none">
+                <div className="min-h-screen flex justify-center font-sans select-none">
+                    {/* App Container - na mobilech bude w-full, na PC zůstane omezena max. šířka */}
                     <div className="w-full max-w-[420px] min-h-screen bg-black flex flex-col relative overflow-hidden">
                         
-                        {/* Header */}
+                        {/* Top Header Bar */}
                         <div className="mt-8 mx-4 h-12 bg-[#121225] rounded-lg flex items-center justify-between px-4 z-20 shadow-lg">
                             <div className="flex items-center gap-3">
                                 <i data-lucide="chevron-left" className="text-white w-5 h-5"></i>
                                 <div className="flex items-center gap-2">
                                     <div className="w-3 h-3 bg-[#4ade80] rounded-full shadow-[0_0_10px_#4ade80]" />
-                                    <span className="text-white font-bold text-sm tracking-tight">VALID</span>
+                                    <span className="text-white font-bold text-sm tracking-tight text-shadow">VALID</span>
                                 </div>
                             </div>
                             <div className="text-white text-[13px] font-medium opacity-90">
@@ -107,86 +142,122 @@
                             </div>
                         </div>
 
-                        {/* Card */}
+                        {/* Card Container */}
                         <div className="flex-1 px-4 pt-4 relative">
                             <div className="relative w-full h-[540px] bg-[#49c3c3] rounded-[16px] overflow-hidden shadow-2xl flex flex-col">
                                 
-                                {/* Background Layers */}
-                                <div className="absolute inset-0 z-0 pointer-events-none">
-                                    <div className="absolute top-0 left-0 w-full h-[38%] bg-gradient-to-b from-white/40 to-transparent" />
-                                    <div className="absolute top-0 left-0 w-full h-[54px] bg-[#2ca8a8]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 40px, 0 100%)' }} />
-                                    <div className="absolute top-[160px] left-0 w-full bottom-0 bg-[#2ca8a8]" />
+                                {/* Minimalist Flat Vector Background Overlay */}
+                                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                                    <div className="absolute top-0 left-0 w-full h-[38%] bg-gradient-to-b from-white via-[#dcf5f5] to-transparent z-0" />
+                                    
+                                    <div className="absolute -top-[10%] -right-[20%] w-[120%] h-[45%] bg-white/40 rounded-[100%] blur-[1px] z-10" />
+                                    <div className="absolute top-[12%] -left-[15%] w-[80%] h-[35%] bg-[#a5e8e8]/30 rounded-[100%] blur-[1px] z-10" />
+                                    
+                                    <div className="absolute top-[25%] left-0 w-full h-[25%] bg-gradient-to-br from-white/20 to-transparent z-10" style={{ clipPath: 'polygon(0 0, 100% 30%, 100% 100%, 0 70%)' }} />
+                                    
+                                    <div className="absolute top-0 left-0 w-full h-[54px] bg-[#2ca8a8] z-20" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 40px, 0 100%)' }} />
+                                    <div className="absolute top-[160px] left-0 w-full bottom-0 bg-[#2ca8a8] z-20" />
                                 </div>
 
-                                {/* Holographic Logos */}
+                                {/* Holographic ISIC Verification Pattern */}
                                 <div className="logo-wave">
                                     {logos.map((logo, i) => (
-                                        <div key={i} className="floating-logo" style={{
-                                            left: logo.x, top: logo.y,
-                                            '--c1': logo.colors[0], '--c2': logo.colors[1], '--c3': logo.colors[2],
-                                            transform: `translate(-50%, -50%) rotate(${logo.rotation}deg)`
-                                        }}>
-                                            <img src="https://i.imgur.com/whz8ix9.png" style={{ animationDelay: `${logo.delay}s` }} />
+                                        <div
+                                            key={i}
+                                            className="floating-logo"
+                                            style={{
+                                                left: `${logo.x}px`,
+                                                top: `${logo.y}px`,
+                                                '--c1': logo.colors[0],
+                                                '--c2': logo.colors[1],
+                                                '--c3': logo.colors[2],
+                                                transform: `translate(-50%, -50%) rotate(${logo.rotation}deg)`
+                                            }}
+                                        >
+                                            <img 
+                                                src="https://i.imgur.com/whz8ix9.png" 
+                                                alt="ISIC" 
+                                                style={{ animationDelay: `${logo.delay}s` }} 
+                                            />
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* Content */}
+                                {/* Card Content */}
                                 <div className="relative z-20 h-full flex flex-col">
+                                    
+                                    {/* Card Header Section */}
                                     <div className="flex justify-between items-start pt-0 px-0">
-                                        <div className="ml-3 bg-white px-2.5 pt-1.5 pb-4 rounded-b-[2px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 75%, 0 100%)' }}>
-                                            <img src="https://i.imgur.com/Zz0z7tL.png" className="h-9" />
+                                        <div className="ml-3 drop-shadow-md">
+                                            <div className="bg-white px-2.5 pt-1.5 pb-4 flex items-center justify-center rounded-b-[2px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 75%, 0 100%)' }}>
+                                                <img src="https://i.imgur.com/Zz0z7tL.png" alt="ISIC Logo" className="h-9 object-contain" />
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2.5 pt-3 pr-3 text-[#042a2b]">
-                                            <img src="https://i.imgur.com/1CYdrWQ.png" className="h-6 grayscale opacity-80" />
-                                            <div className="flex flex-col">
-                                                <span className="text-[7.5px] font-bold uppercase">ISIC card number</span>
-                                                <span className="text-[12px] font-extrabold">S 420 301 234 709 P</span>
+
+                                        <div className="flex items-center gap-2.5 pt-3 pr-3">
+                                            <img src="https://i.imgur.com/1CYdrWQ.png" alt="UNESCO" className="h-6 object-contain grayscale mix-blend-multiply opacity-80" />
+                                            <div className="flex flex-col justify-center">
+                                                <span className="text-[#042a2b] text-[7.5px] font-bold uppercase tracking-tight leading-none mb-[2px]">ISIC card number</span>
+                                                <span className="text-[#042a2b] text-[12px] font-extrabold tracking-tight leading-none">S 420 301 234 709 P</span>
                                             </div>
                                         </div>
                                     </div>
 
+                                    {/* Profile Photo */}
                                     <div className="flex justify-center mt-[44px]">
-                                        <img src="https://i.imgur.com/gW0g7QK.jpeg" className="w-[90px] h-[105px] rounded-[10px] object-cover shadow-xl border-2 border-white/20" />
+                                        <div className="w-[90px] h-[105px] rounded-[10px] overflow-hidden shadow-xl">
+                                            <img 
+                                                src="https://i.imgur.com/gW0g7QK.jpeg" 
+                                                alt="Profile" 
+                                                className="w-full h-full object-cover rounded-[8px]"
+                                            />
+                                        </div>
                                     </div>
 
+                                    {/* Identity Info */}
                                     <div className="text-center mt-3 text-white">
-                                        <h1 className="text-[22px] font-extrabold leading-none">Minh Tam Nghiemová</h1>
-                                        <p className="text-[14px] font-semibold opacity-90 mt-1">NEWTON University</p>
+                                        <h1 className="text-[22px] font-extrabold tracking-tight leading-none drop-shadow-sm">Minh Tam Nghiemová</h1>
+                                        <p className="text-[14px] font-semibold opacity-90 mt-1 drop-shadow-sm">NEWTON University</p>
                                     </div>
 
-                                    <div className="grid grid-cols-2 mt-5 px-8 text-white">
-                                        <div className="flex flex-col items-center border-r border-white/20">
-                                            <span className="text-[#005a5c] text-[9px] font-bold uppercase">Validity</span>
-                                            <span className="text-[15px] font-black">12/2026</span>
+                                    {/* Validity Info */}
+                                    <div className="grid grid-cols-2 mt-5 mb-2 px-8">
+                                        <div className="flex flex-col items-center border-r border-[#005a5c]/20">
+                                            <span className="text-[#005a5c] text-[9px] font-bold uppercase opacity-80 mb-1">Platnost | Validity</span>
+                                            <span className="text-white text-[15px] font-black drop-shadow-sm">12/2026</span>
                                         </div>
                                         <div className="flex flex-col items-center">
-                                            <span className="text-[#005a5c] text-[9px] font-bold uppercase">Born</span>
-                                            <span className="text-[15px] font-black">31/05/2003</span>
+                                            <span className="text-[#005a5c] text-[9px] font-bold uppercase opacity-80 mb-1">Narozen (a) | Born</span>
+                                            <span className="text-white text-[15px] font-black drop-shadow-sm">31/05/2003</span>
                                         </div>
                                     </div>
 
-                                    <div className="flex-1 flex items-end justify-center pb-8">
-                                        <div className="bg-white p-2 rounded-[12px]">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=ISIC" className="w-20 h-20" />
+                                    {/* QR Code */}
+                                    <div className="flex-1 flex items-end justify-center pb-8 pt-1">
+                                        <div className="bg-white p-3 rounded-[16px] shadow-xl">
+                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ISIC" alt="QR Code" className="w-[100px] h-[100px]" />
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Footer */}
-                        <div className="mt-4 pb-12 flex flex-col items-center gap-4">
-                            <div className="flex gap-2">
-                                <div className="w-2 h-2 rounded-full bg-[#43c4c7]" />
-                                <div className="w-2 h-2 rounded-full bg-white/20" />
-                                <div className="w-2 h-2 rounded-full bg-white/20" />
+                        {/* Footer Area */}
+                        <div className="mt-4 pb-12 flex flex-col items-center gap-6">
+                            <div className="flex gap-2.5">
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#43c4c7] shadow-[0_0_8px_#43c4c7]" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#3d3d5c]" />
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#3d3d5c]" />
                             </div>
-                            <div className="w-[140px] h-14 bg-white/10 rounded-full border border-white/20 flex items-center justify-around px-2 backdrop-blur-md">
-                                <button className="w-10 h-10 rounded-full bg-[#5d3fd3] flex items-center justify-center text-white">
+
+                            <p className="text-neutral-500 text-[13px] font-medium tracking-wide">Swipe through pages</p>
+                            
+                            <div className="w-[140px] h-14 bg-white/5 rounded-full border border-white/10 flex items-center justify-around px-2 backdrop-blur-md">
+                                <button className="w-10 h-10 rounded-full bg-[#5d3fd3] flex items-center justify-center text-white shadow-lg shadow-[#5d3fd3]/20">
                                     <i data-lucide="credit-card" className="w-5 h-5"></i>
                                 </button>
-                                <button className="text-white/50">
+                                <div className="w-[1px] h-6 bg-white/10" />
+                                <button className="w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white transition-colors">
                                     <i data-lucide="user" className="w-5 h-5"></i>
                                 </button>
                             </div>
@@ -198,9 +269,6 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-        
-        // Inicializace ikon
-        setTimeout(() => lucide.createIcons(), 100);
     </script>
 </body>
 </html>
