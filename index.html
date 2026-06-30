@@ -1,94 +1,111 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Moje ISIC Karta</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+import React, { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, RefreshCw, ArrowUpCircle } from 'lucide-react';
 
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #000;
-            overscroll-behavior: none;
-            overflow: hidden;
-        }
+export default function App() {
+  const [time, setTime] = useState(new Date());
+  const [activeSlide, setActiveSlide] = useState(0);
+  const touchStartX = useRef(null);
+  const touchEndX = useRef(null);
 
-        .logo-wave {
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-            pointer-events: none;
-        }
+  const minSwipeDistance = 50;
 
-        .floating-logo {
-            position: absolute;
-            /* Zvětšená loga ze 110px na 140px */
-            width: 140px;
-            height: 140px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+  const onTouchStart = (e) => {
+    touchEndX.current = null;
+    touchStartX.current = e.targetTouches[0].clientX;
+  };
 
+  const onTouchMove = (e) => {
+    touchEndX.current = e.targetTouches[0].clientX;
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return;
+    const distance = touchStartX.current - touchEndX.current;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe && activeSlide < 2) {
+      setActiveSlide((prev) => prev + 1);
+    } else if (isRightSwipe && activeSlide > 0) {
+      setActiveSlide((prev) => prev - 1);
+    }
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = () => {
+    const d = time;
+    const date = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
+    const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
+    return `${date} | ${timeStr}`;
+  };
+
+  const logos = [
+    { left: '70%', top: '90%', delay: 0.0, rotation: -45, colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
+    { left: '15%', top: '80%', delay: 0.5, rotation: 75, colors: ['#ff69b499', '#00c8ff99', '#b464ff99'] },
+    { left: '85%', top: '65%', delay: 1.0, rotation: -30, colors: ['#6496ff99', '#c864ff99', '#9664ff99'] },
+    { left: '45%', top: '50%', delay: 1.5, rotation: 10, colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
+    { left: '10%', top: '38%', delay: 2.0, rotation: -60, colors: ['#ff336699', '#ff993399', '#ff00cc99'] },
+    { left: '88%', top: '25%', delay: 2.5, rotation: 30, colors: ['#ff69b499', '#9664ff99', '#00c8ff99'] },
+    { left: '30%', top: '15%', delay: 3.0, rotation: 45, colors: ['#00ffcc99', '#cc00ff99', '#6496ff99'] },
+    { left: '80%', top: '5%', delay: 3.5, rotation: -15, colors: ['#c864ff99', '#ff336699', '#ff993399'] },
+  ];
+
+  const logosSlide2 = [
+    { left: '10%', top: '75%', delay: 0.0, rotation: 45, colors: ['#00ffcc99', '#cc00ff99', '#6496ff99'] },
+    { left: '25%', top: '25%', delay: 0.5, rotation: -15, colors: ['#c864ff99', '#ff336699', '#ff993399'] },
+    { left: '40%', top: '65%', delay: 1.0, rotation: -45, colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
+    { left: '55%', top: '35%', delay: 1.5, rotation: 75, colors: ['#ff69b499', '#00c8ff99', '#b464ff99'] },
+    { left: '70%', top: '80%', delay: 2.0, rotation: -30, colors: ['#6496ff99', '#c864ff99', '#9664ff99'] },
+    { left: '85%', top: '20%', delay: 2.5, rotation: 10, colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
+    { left: '95%', top: '50%', delay: 3.0, rotation: -60, colors: ['#ff336699', '#ff993399', '#ff00cc99'] },
+  ];
+
+  const getSlideClass = (index) => {
+    if (activeSlide === index) return 'opacity-100 z-10 translate-x-0';
+    if (activeSlide > index) return 'opacity-0 z-0 -translate-x-full pointer-events-none';
+    return 'opacity-0 z-0 translate-x-full pointer-events-none';
+  };
+
+  return (
+    <div
+      className="h-[100dvh] w-full flex justify-center overflow-hidden bg-black select-none font-sans"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
+      <style>{`
+        body { margin: 0; padding: 0; background-color: #000; overscroll-behavior: none; overflow: hidden; }
+        ::-webkit-scrollbar { display: none; }
+        .slide-container { perspective: 1000px; touch-action: pan-y pinch-zoom; }
+
+        .logo-wave { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+        .floating-logo { position: absolute; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; }
         .floating-logo img {
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-            opacity: 0;
-            /* Rychlejší náběh (ease-out) s délkou 4s na celkový loop */
+            width: 100%; height: auto; object-fit: contain; opacity: 0;
             animation: holographicFlash 4s ease-out infinite;
         }
 
         @keyframes holographicFlash {
-            0% { 
-                opacity: 0; 
-                filter: drop-shadow(0 0 0 transparent) brightness(1) saturate(1); 
-            }
+            0% { opacity: 0; filter: drop-shadow(0 0 0 transparent) brightness(1) saturate(1); }
             5% { 
-                /* Decentní barevné zaleštění bez silného oslepení */
                 opacity: 0.6;
-                filter: drop-shadow(-3px -3px 6px var(--c1)) 
-                        drop-shadow(3px 3px 6px var(--c2)) 
-                        drop-shadow(0 0 12px var(--c3))
-                        brightness(1.15) saturate(1.4);    
+                filter: drop-shadow(-3px -3px 6px var(--c1)) drop-shadow(3px 3px 6px var(--c2)) drop-shadow(0 0 12px var(--c3)) brightness(1.15) saturate(1.4);    
             }
             12% { 
-                /* Ustálení holografických barev */
                 opacity: 0.5; 
-                filter: drop-shadow(-2px -2px 4px var(--c1)) 
-                        drop-shadow(2px 2px 4px var(--c2)) 
-                        drop-shadow(0 0 8px var(--c3))
-                        brightness(1.05) saturate(1.1);
+                filter: drop-shadow(-2px -2px 4px var(--c1)) drop-shadow(2px 2px 4px var(--c2)) drop-shadow(0 0 8px var(--c3)) brightness(1.05) saturate(1.1);
             }
-            30% { 
-                /* Plynulé zmizení */
-                opacity: 0; 
-                filter: drop-shadow(0 0 0 transparent) brightness(1) saturate(1); 
-            }
-            100% { 
-                opacity: 0; 
-            }
+            30% { opacity: 0; filter: drop-shadow(0 0 0 transparent) brightness(1) saturate(1); }
+            100% { opacity: 0; }
         }
 
         .logo-wave::after {
-            content: '';
-            position: absolute;
-            inset: -40%;
-            background: linear-gradient(
-                115deg, transparent 35%, rgba(255,255,255,0.12) 48%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.12) 52%, transparent 65%
-            );
+            content: ''; position: absolute; inset: -40%;
+            background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.12) 48%, rgba(255,255,255,0.35) 50%, rgba(255,255,255,0.12) 52%, transparent 65%);
             animation: sweep 4s linear infinite;
         }
 
@@ -97,293 +114,204 @@
             to { transform: translateX(60%) translateY(10%) rotate(8deg); }
         }
 
-        ::-webkit-scrollbar {
-            display: none;
+        /* Dynamické sjednocení velikosti pomocí CSS Container Queries */
+        .slide-2-container {
+            container-type: size;
         }
-
-        .slide-container {
-            perspective: 1000px;
-            touch-action: pan-y pinch-zoom;
+        .slide-2-rotated {
+            width: 100cqh;
+            height: 100cqw;
+            transform: translate(-50%, -50%) rotate(-90deg);
         }
-    </style>
-</head>
-<body class="bg-black">
-    <div id="root"></div>
+      `}</style>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+      <div className="w-full max-w-[420px] h-full flex flex-col relative justify-between">
+        
+        {/* Top Header Bar */}
+        <div
+          className="mx-4 shrink-0 h-12 bg-[#121225] rounded-lg flex items-center justify-between px-4 z-20 shadow-lg"
+          style={{ marginTop: 'max(1.5rem, env(safe-area-inset-top, 24px))' }}
+        >
+          <div className="flex items-center gap-3">
+            <ChevronLeft size={20} className="text-white" />
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-[#4ade80] rounded-full shadow-[0_0_10px_#4ade80]" />
+              <span className="text-white font-bold text-sm tracking-tight uppercase">Valid</span>
+            </div>
+          </div>
+          <div className="text-white text-[11px] xs:text-[13px] font-medium opacity-90">
+            {formatTime()}
+          </div>
+        </div>
 
-        function App() {
-            const [time, setTime] = useState(new Date());
-            const [activeSlide, setActiveSlide] = useState(0);
-            const touchStartX = useRef(null);
-            const touchEndX = useRef(null);
+        {/* Middle Section */}
+        <div className="w-full px-4 flex-1 flex flex-col items-center justify-center slide-container relative py-6">
+          <div className="relative w-full max-w-[360px] h-full max-h-[750px] shrink-0">
+            
+            {/* SLIDE 1 (Vertical) */}
+            <div className={`absolute inset-0 bg-[#49c3c3] rounded-[24px] overflow-hidden shadow-2xl flex flex-col transition-all duration-500 ease-in-out ${getSlideClass(0)}`}>
+              <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[40%] bg-gradient-to-b from-white via-[#dcf5f5] to-transparent z-0" />
+                <div className="absolute -top-[5%] -right-[15%] w-[110%] h-[45%] bg-white/40 rounded-[100%] blur-[1px] z-10" />
+                <div className="absolute top-[10%] -left-[10%] w-[90%] h-[35%] bg-[#a5e8e8]/30 rounded-[100%] blur-[1px] z-10" />
+                <div className="absolute top-[25%] left-0 w-full h-[25%] bg-gradient-to-br from-white/20 to-transparent z-10" style={{ clipPath: 'polygon(0 0, 100% 30%, 100% 100%, 0 70%)' }} />
+                <div className="absolute top-0 left-0 w-full h-[90px] bg-[#2ca8a8] z-20" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 70px, 0 100%)' }} />
+                <div className="absolute top-[200px] left-0 w-full bottom-0 bg-[#2ca8a8] z-20" />
+              </div>
 
-            const minSwipeDistance = 50;
+              <div className="logo-wave z-40">
+                {logos.map((logo, i) => (
+                  <div key={`s1-${i}`} className="floating-logo" style={{ left: logo.left, top: logo.top, '--c1': logo.colors[0], '--c2': logo.colors[1], '--c3': logo.colors[2], transform: `translate(-50%, -50%) rotate(${logo.rotation}deg)` }}>
+                    <img src="https://i.imgur.com/whz8ix9.png" style={{ animationDelay: `${logo.delay}s` }} />
+                  </div>
+                ))}
+              </div>
 
-            const onTouchStart = (e) => {
-                touchEndX.current = null;
-                touchStartX.current = e.targetTouches[0].clientX;
-            };
-
-            const onTouchMove = (e) => {
-                touchEndX.current = e.targetTouches[0].clientX;
-            };
-
-            const onTouchEnd = () => {
-                if (!touchStartX.current || !touchEndX.current) return;
-                const distance = touchStartX.current - touchEndX.current;
-                const isLeftSwipe = distance > minSwipeDistance;
-                const isRightSwipe = distance < -minSwipeDistance;
-
-                if (isLeftSwipe && activeSlide < 2) {
-                    setActiveSlide(prev => prev + 1);
-                } else if (isRightSwipe && activeSlide > 0) {
-                    setActiveSlide(prev => prev - 1);
-                }
-            };
-
-            useEffect(() => {
-                const timer = setInterval(() => setTime(new Date()), 1000);
-                return () => clearInterval(timer);
-            }, []);
-
-            useEffect(() => {
-                if (window.lucide) {
-                    window.lucide.createIcons();
-                }
-            });
-
-            const formatTime = () => {
-                const d = time;
-                const date = `${String(d.getDate()).padStart(2, '0')}-${String(d.getMonth() + 1).padStart(2, '0')}-${d.getFullYear()}`;
-                const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
-                return `${date} | ${timeStr}`;
-            };
-
-            const logos = [
-                { left: '70%', top: '90%', delay: 0.0, rotation: -45, colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
-                { left: '15%', top: '80%', delay: 0.5, rotation: 75,  colors: ['#ff69b499', '#00c8ff99', '#b464ff99'] },
-                { left: '85%', top: '65%', delay: 1.0, rotation: -30, colors: ['#6496ff99', '#c864ff99', '#9664ff99'] },
-                { left: '45%', top: '50%', delay: 1.5, rotation: 10,  colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
-                { left: '10%', top: '38%', delay: 2.0, rotation: -60, colors: ['#ff336699', '#ff993399', '#ff00cc99'] },
-                { left: '88%', top: '25%', delay: 2.5, rotation: 30,  colors: ['#ff69b499', '#9664ff99', '#00c8ff99'] },
-                { left: '30%', top: '15%', delay: 3.0, rotation: 45,  colors: ['#00ffcc99', '#cc00ff99', '#6496ff99'] },
-                { left: '80%', top: '5%',  delay: 3.5, rotation: -15, colors: ['#c864ff99', '#ff336699', '#ff993399'] }
-            ];
-
-            const logosSlide2 = [
-                { left: '10%', top: '75%', delay: 0.0, rotation: 45,  colors: ['#00ffcc99', '#cc00ff99', '#6496ff99'] },
-                { left: '25%', top: '25%', delay: 0.5, rotation: -15, colors: ['#c864ff99', '#ff336699', '#ff993399'] },
-                { left: '40%', top: '65%', delay: 1.0, rotation: -45, colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
-                { left: '55%', top: '35%', delay: 1.5, rotation: 75,  colors: ['#ff69b499', '#00c8ff99', '#b464ff99'] },
-                { left: '70%', top: '80%', delay: 2.0, rotation: -30, colors: ['#6496ff99', '#c864ff99', '#9664ff99'] },
-                { left: '85%', top: '20%', delay: 2.5, rotation: 10,  colors: ['#00ffcc99', '#0066ff99', '#cc00ff99'] },
-                { left: '95%', top: '50%', delay: 3.0, rotation: -60, colors: ['#ff336699', '#ff993399', '#ff00cc99'] }
-            ];
-
-            const getSlideClass = (index) => {
-                if (activeSlide === index) return 'opacity-100 z-10 translate-x-0';
-                if (activeSlide > index) return 'opacity-0 z-0 -translate-x-full pointer-events-none';
-                return 'opacity-0 z-0 translate-x-full pointer-events-none';
-            };
-
-            return (
-                <div 
-                    className="h-[100dvh] w-full flex justify-center overflow-hidden bg-black"
-                    onTouchStart={onTouchStart}
-                    onTouchMove={onTouchMove}
-                    onTouchEnd={onTouchEnd}
-                >
-                    <div className="w-full max-w-[420px] h-full flex flex-col relative justify-between">
-                        
-                        {/* Top Header Bar */}
-                        <div 
-                            className="mx-4 shrink-0 h-12 bg-[#121225] rounded-lg flex items-center justify-between px-4 z-20 shadow-lg"
-                            style={{ marginTop: 'max(1.5rem, env(safe-area-inset-top))' }}
-                        >
-                            <div className="flex items-center gap-3">
-                                <i data-lucide="chevron-left" className="text-white w-5 h-5"></i>
-                                <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 bg-[#4ade80] rounded-full shadow-[0_0_10px_#4ade80]" />
-                                    <span className="text-white font-bold text-sm tracking-tight uppercase">Valid</span>
-                                </div>
-                            </div>
-                            <div className="text-white text-[11px] xs:text-[13px] font-medium opacity-90">
-                                {formatTime()}
-                            </div>
-                        </div>
-
-                        {/* Middle Section */}
-                        <div className="w-full px-4 flex-1 flex flex-col items-center justify-center slide-container relative py-6">
-                            <div className="relative w-full max-w-[360px] h-full max-h-[750px] shrink-0">
-                                
-                                {/* SLIDE 1 (Vertical) */}
-                                <div className={`absolute inset-0 bg-[#49c3c3] rounded-[24px] overflow-hidden shadow-2xl flex flex-col transition-all duration-500 ease-in-out ${getSlideClass(0)}`}>
-                                    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                                        <div className="absolute top-0 left-0 w-full h-[40%] bg-gradient-to-b from-white via-[#dcf5f5] to-transparent z-0" />
-                                        <div className="absolute -top-[5%] -right-[15%] w-[110%] h-[45%] bg-white/40 rounded-[100%] blur-[1px] z-10" />
-                                        <div className="absolute top-[10%] -left-[10%] w-[90%] h-[35%] bg-[#a5e8e8]/30 rounded-[100%] blur-[1px] z-10" />
-                                        <div className="absolute top-[25%] left-0 w-full h-[25%] bg-gradient-to-br from-white/20 to-transparent z-10" style={{ clipPath: 'polygon(0 0, 100% 30%, 100% 100%, 0 70%)' }} />
-                                        <div className="absolute top-0 left-0 w-full h-[90px] bg-[#2ca8a8] z-20" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 70px, 0 100%)' }} />
-                                        <div className="absolute top-[200px] left-0 w-full bottom-0 bg-[#2ca8a8] z-20" />
-                                    </div>
-
-                                    <div className="logo-wave z-40">
-                                        {logos.map((logo, i) => (
-                                            <div key={`s1-${i}`} className="floating-logo" style={{ left: logo.left, top: logo.top, '--c1': logo.colors[0], '--c2': logo.colors[1], '--c3': logo.colors[2], transform: `translate(-50%, -50%) rotate(${logo.rotation}deg)` }}>
-                                                <img src="https://i.imgur.com/whz8ix9.png" style={{ animationDelay: `${logo.delay}s` }} />
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <div className="relative z-20 h-full flex flex-col justify-between pb-2">
-                                        <div>
-                                            <div className="flex justify-between items-start pt-0 px-0">
-                                                <div className="ml-4 drop-shadow-md">
-                                                    <div className="bg-white px-4 pt-8 pb-6 flex items-center justify-center rounded-b-[4px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 88%, 0 100%)' }}>
-                                                        <img src="https://i.imgur.com/Zz0z7tL.png" className="h-[48px] object-contain" />
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-3 pt-[30px] pr-4">
-                                                    <img src="https://i.imgur.com/1CYdrWQ.png" className="h-7 object-contain grayscale mix-blend-multiply opacity-80" />
-                                                    <div className="flex flex-col justify-center">
-                                                        <span className="text-[#042a2b] text-[8px] font-bold uppercase tracking-tight leading-none mb-[2px]">ISIC card number</span>
-                                                        <span className="text-[#042a2b] text-[13px] font-extrabold tracking-tight leading-none">S 420 301 234 709 P</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="flex justify-center mt-12">
-                                                <div className="w-[120px] h-[145px] rounded-[12px] overflow-hidden shadow-2xl border-2 border-white/20">
-                                                    <img src="https://i.imgur.com/gW0g7QK.jpeg" className="w-full h-full object-cover" />
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="text-center mt-6 text-white px-4">
-                                                <h1 className="text-[26px] font-black tracking-tight leading-none drop-shadow-lg">Minh Tam Nghiemová</h1>
-                                                <p className="text-[16px] font-bold opacity-90 mt-2 drop-shadow-md">NEWTON University</p>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 mt-8 px-8">
-                                                <div className="flex flex-col items-center border-r border-[#005a5c]/30">
-                                                    <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-80 mb-1">Platnost | Validity</span>
-                                                    <span className="text-white text-[18px] font-black drop-shadow-md">12/2026</span>
-                                                </div>
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-80 mb-1">Narozen (a) | Born</span>
-                                                    <span className="text-white text-[18px] font-black drop-shadow-md">31/05/2003</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex justify-center pb-8">
-                                            <div className="bg-white p-4 rounded-[20px] shadow-2xl transform hover:scale-105 transition-transform duration-300">
-                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ISIC" className="w-[110px] h-[110px]" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* SLIDE 2 (Horizontal Rotated) */}
-                                <div className={`absolute inset-0 flex items-center justify-center transition-all duration-500 ease-in-out ${getSlideClass(1)}`}>
-                                    <div className="relative w-[680px] h-[360px] rotate-[-90deg] bg-[#49c3c3] rounded-[24px] overflow-hidden shadow-2xl flex flex-col shrink-0">
-                                        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-                                            <div className="absolute inset-0" style={{ clipPath: 'polygon(0 0, 100% 30%, 80% 100%, 0 70%)', background: 'rgba(255,255,255,0.15)' }} />
-                                            <div className="absolute" style={{ left: '-200px', top: '-100px', width: '700px', height: '700px', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.45)' }} />
-                                            <div className="absolute" style={{ right: '-150px', bottom: '-150px', width: '600px', height: '600px', background: 'rgba(255, 255, 255, 0.3)', borderRadius: '50%' }} />
-                                        </div>
-                                        <div className="absolute top-0 left-0 w-full h-[130px] bg-[#2ca8a8] z-10 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85px, 0 100%)' }} />
-                                        <div className="absolute inset-0 z-20">
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px', gap: '24px', padding: '185px 50px 30px 70px' }} className="h-full w-full">
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                        <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Jméno</span>
-                                                        <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">Minh Tam Nghiemová</span>
-                                                    </div>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                        <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Univerzita</span>
-                                                        <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">NEWTON University</span>
-                                                    </div>
-                                                    <div className="flex gap-14">
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                            <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Platnost</span>
-                                                            <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">12/2026</span>
-                                                        </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                                            <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Narozen (a)</span>
-                                                            <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">31/05/2003</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <img src="https://i.imgur.com/gW0g7QK.jpeg" className="object-cover rounded-[10px]" style={{ width: '180px', height: '235px', boxShadow: '0 15px 30px rgba(0,0,0,0.18)', alignSelf: 'start', marginTop: '-85px' }} />
-                                            </div>
-                                        </div>
-                                        <div className="absolute inset-0 z-30 pointer-events-none">
-                                            <div className="absolute -top-1 left-6 drop-shadow-md">
-                                                <div className="bg-white px-5 pt-12 pb-16 flex items-center justify-center rounded-b-[6px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 82%, 0 100%)' }}>
-                                                    <img src="https://i.imgur.com/Zz0z7tL.png" className="h-[75px] object-contain" />
-                                                </div>
-                                            </div>
-                                            <div className="absolute top-[40px] right-[40px] flex items-center gap-4">
-                                                <img src="https://i.imgur.com/1CYdrWQ.png" className="h-[32px] object-contain grayscale mix-blend-multiply opacity-80" />
-                                                <div className="flex flex-col items-start text-[#042a2b]">
-                                                    <span className="text-[10px] font-bold uppercase opacity-70 mb-[4px]">ISIC card number</span>
-                                                    <span className="text-[20px] font-bold tracking-[0.08em] leading-none">S 420 301 234 709 P</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="logo-wave z-40">
-                                            {logosSlide2.map((logo, i) => (
-                                                <div key={`s2-${i}`} className="floating-logo" style={{ left: logo.left, top: logo.top, '--c1': logo.colors[0], '--c2': logo.colors[1], '--c3': logo.colors[2], transform: `translate(-50%, -50%) rotate(${logo.rotation}deg)` }}>
-                                                    <img src="https://i.imgur.com/whz8ix9.png" style={{ animationDelay: `${logo.delay}s` }} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* SLIDE 3 */}
-                                <div className={`absolute inset-0 bg-neutral-900/95 rounded-[24px] border border-white/10 flex flex-col items-center justify-center shadow-2xl transition-all duration-500 ease-in-out p-8 ${getSlideClass(2)}`}>
-                                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                                        <i data-lucide="refresh-cw" className="w-10 h-10 text-[#43c4c7]"></i>
-                                    </div>
-                                    <h2 className="text-white text-[24px] font-black tracking-tight mb-4 text-center leading-tight">Stará verze průkazu</h2>
-                                    <p className="text-neutral-400 text-[15px] font-medium text-center mb-10 leading-relaxed max-w-[280px]">
-                                        Tento formát průkazu již není podporován. Aktualizuj si prosím aplikaci pro zobrazení nového designu karet.
-                                    </p>
-                                    <button className="bg-[#43c4c7] text-[#042a2b] px-8 py-4 rounded-full font-black text-[15px] shadow-xl shadow-[#43c4c7]/20 flex items-center gap-3 active:scale-95 transition-transform">
-                                        <i data-lucide="arrow-up-circle" className="w-6 h-6"></i>
-                                        Aktualizovat aplikaci
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Footer Area */}
-                        <div 
-                            className="flex flex-col items-center gap-8 shrink-0 z-20"
-                            style={{ marginBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
-                        >
-                            <div className="flex gap-4">
-                                {[0, 1, 2].map((index) => (
-                                    <button 
-                                        key={index}
-                                        onClick={() => setActiveSlide(index)}
-                                        className={`rounded-full transition-all duration-500 ${activeSlide === index ? 'w-3 h-3 bg-[#43c4c7] shadow-[0_0_12px_#43c4c7] scale-125' : 'w-3 h-3 bg-[#3d3d5c]'}`}
-                                    />
-                                ))}
-                            </div>
-                            <p className="text-neutral-500 text-[13px] font-bold uppercase tracking-[0.1em]">Swipe through pages</p>
-                        </div>
-
+              <div className="relative z-20 h-full flex flex-col justify-between pb-2">
+                <div>
+                  <div className="flex justify-between items-start pt-0 px-0">
+                    <div className="ml-4 drop-shadow-md">
+                      <div className="bg-white px-4 pt-8 pb-6 flex items-center justify-center rounded-b-[4px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 88%, 0 100%)' }}>
+                        <img src="https://i.imgur.com/Zz0z7tL.png" className="h-[48px] object-contain" />
+                      </div>
                     </div>
-                </div>
-            );
-        }
+                    <div className="flex items-center gap-3 pt-[30px] pr-4">
+                      <img src="https://i.imgur.com/1CYdrWQ.png" className="h-7 object-contain grayscale mix-blend-multiply opacity-80" />
+                      <div className="flex flex-col justify-center">
+                        <span className="text-[#042a2b] text-[8px] font-bold uppercase tracking-tight leading-none mb-[2px]">ISIC card number</span>
+                        <span className="text-[#042a2b] text-[13px] font-extrabold tracking-tight leading-none">S 420 301 234 709 P</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-center mt-12">
+                    <div className="w-[120px] h-[145px] rounded-[12px] overflow-hidden shadow-2xl border-2 border-white/20">
+                      <img src="https://i.imgur.com/gW0g7QK.jpeg" className="w-full h-full object-cover" />
+                    </div>
+                  </div>
+                  
+                  <div className="text-center mt-6 text-white px-4">
+                    <h1 className="text-[26px] font-black tracking-tight leading-none drop-shadow-lg">Minh Tam Nghiemová</h1>
+                    <p className="text-[16px] font-bold opacity-90 mt-2 drop-shadow-md">NEWTON University</p>
+                  </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                  <div className="grid grid-cols-2 mt-8 px-8">
+                    <div className="flex flex-col items-center border-r border-[#005a5c]/30">
+                      <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-80 mb-1">Platnost | Validity</span>
+                      <span className="text-white text-[18px] font-black drop-shadow-md">12/2026</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-80 mb-1">Narozen (a) | Born</span>
+                      <span className="text-white text-[18px] font-black drop-shadow-md">31/05/2003</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-center pb-8">
+                  <div className="bg-white p-4 rounded-[20px] shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ISIC" className="w-[110px] h-[110px]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SLIDE 2 (Horizontal Rotated - Dynamically unified sizing) */}
+            <div className={`absolute inset-0 transition-all duration-500 ease-in-out slide-2-container ${getSlideClass(1)}`}>
+              {/* Samotná otočená karta, která se proporcemi přesně natáhne podle výšky/šířky prvního slidu */}
+              <div className="absolute left-1/2 top-1/2 bg-[#49c3c3] rounded-[24px] overflow-hidden shadow-2xl flex flex-col shrink-0 slide-2-rotated">
+                <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+                  <div className="absolute inset-0" style={{ clipPath: 'polygon(0 0, 100% 30%, 80% 100%, 0 70%)', background: 'rgba(255,255,255,0.15)' }} />
+                  <div className="absolute" style={{ left: '-10%', top: '-30%', width: '120cqh', height: '120cqh', borderRadius: '50%', background: 'rgba(255, 255, 255, 0.45)' }} />
+                  <div className="absolute" style={{ right: '-20%', bottom: '-40%', width: '100cqh', height: '100cqh', background: 'rgba(255, 255, 255, 0.3)', borderRadius: '50%' }} />
+                </div>
+                <div className="absolute top-0 left-0 w-full h-[130px] bg-[#2ca8a8] z-10 pointer-events-none" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85px, 0 100%)' }} />
+                
+                <div className="absolute inset-0 z-20">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px', gap: '24px', padding: '160px 40px 20px 60px' }} className="h-full w-full">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Jméno</span>
+                        <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">Minh Tam Nghiemová</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Univerzita</span>
+                        <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">NEWTON University</span>
+                      </div>
+                      <div className="flex gap-14">
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Platnost</span>
+                          <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">12/2026</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span className="text-[#005a5c] text-[10px] font-bold uppercase opacity-90">Narozen (a)</span>
+                          <span className="text-[#021f20] text-[20px] font-black leading-none tracking-tight">31/05/2003</span>
+                        </div>
+                      </div>
+                    </div>
+                    <img src="https://i.imgur.com/gW0g7QK.jpeg" className="object-cover rounded-[10px]" style={{ width: '180px', height: '235px', boxShadow: '0 15px 30px rgba(0,0,0,0.18)', alignSelf: 'start', marginTop: '-85px' }} />
+                  </div>
+                </div>
+
+                <div className="absolute inset-0 z-30 pointer-events-none">
+                  <div className="absolute -top-1 left-6 drop-shadow-md">
+                    <div className="bg-white px-5 pt-12 pb-16 flex items-center justify-center rounded-b-[6px]" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 82%, 0 100%)' }}>
+                      <img src="https://i.imgur.com/Zz0z7tL.png" className="h-[75px] object-contain" />
+                    </div>
+                  </div>
+                  <div className="absolute top-[40px] right-[40px] flex items-center gap-4">
+                    <img src="https://i.imgur.com/1CYdrWQ.png" className="h-[32px] object-contain grayscale mix-blend-multiply opacity-80" />
+                    <div className="flex flex-col items-start text-[#042a2b]">
+                      <span className="text-[10px] font-bold uppercase opacity-70 mb-[4px]">ISIC card number</span>
+                      <span className="text-[20px] font-bold tracking-[0.08em] leading-none">S 420 301 234 709 P</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="logo-wave z-40">
+                  {logosSlide2.map((logo, i) => (
+                    <div key={`s2-${i}`} className="floating-logo" style={{ left: logo.left, top: logo.top, '--c1': logo.colors[0], '--c2': logo.colors[1], '--c3': logo.colors[2], transform: `translate(-50%, -50%) rotate(${logo.rotation}deg)` }}>
+                      <img src="https://i.imgur.com/whz8ix9.png" style={{ animationDelay: `${logo.delay}s` }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SLIDE 3 */}
+            <div className={`absolute inset-0 bg-neutral-900/95 rounded-[24px] border border-white/10 flex flex-col items-center justify-center shadow-2xl transition-all duration-500 ease-in-out p-8 ${getSlideClass(2)}`}>
+              <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
+                <RefreshCw size={40} className="text-[#43c4c7]" />
+              </div>
+              <h2 className="text-white text-[24px] font-black tracking-tight mb-4 text-center leading-tight">Stará verze průkazu</h2>
+              <p className="text-neutral-400 text-[15px] font-medium text-center mb-10 leading-relaxed max-w-[280px]">
+                Tento formát průkazu již není podporován. Aktualizuj si prosím aplikaci pro zobrazení nového designu karet.
+              </p>
+              <button className="bg-[#43c4c7] text-[#042a2b] px-8 py-4 rounded-full font-black text-[15px] shadow-xl shadow-[#43c4c7]/20 flex items-center gap-3 active:scale-95 transition-transform">
+                <ArrowUpCircle size={24} />
+                Aktualizovat aplikaci
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Area */}
+        <div
+          className="flex flex-col items-center gap-8 shrink-0 z-20"
+          style={{ marginBottom: 'max(1.5rem, env(safe-area-inset-bottom, 24px))' }}
+        >
+          <div className="flex gap-4">
+            {[0, 1, 2].map((index) => (
+              <button
+                key={index}
+                onClick={() => setActiveSlide(index)}
+                className={`rounded-full transition-all duration-500 ${activeSlide === index ? 'w-3 h-3 bg-[#43c4c7] shadow-[0_0_12px_#43c4c7] scale-125' : 'w-3 h-3 bg-[#3d3d5c]'}`}
+              />
+            ))}
+          </div>
+          <p className="text-neutral-500 text-[13px] font-bold uppercase tracking-[0.1em]">Swipe through pages</p>
+        </div>
+
+      </div>
+    </div>
+  );
+}
